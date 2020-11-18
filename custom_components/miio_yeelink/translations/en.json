@@ -1,0 +1,21 @@
+{
+    "config": {
+        "flow_title": "Miio for Yeelink: {name}",
+        "step": {
+            "title": "Miio for Yeelink",
+            "description": "Config device info.",
+            "user": {
+                "data": {
+                    "host": "Local IP for device",
+                    "token": "Token",
+                    "name": "Device name",
+                    "model": "Model",
+                    "mode": "Mode (light,fan) empty for auto"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "Failed to connect the device"
+        }
+    }
+}
