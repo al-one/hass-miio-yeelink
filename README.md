@@ -9,6 +9,7 @@
 - YLYB02YL | yeelink.bhf_light.v2
 - YLFD02YL | yeelink.light.fancl1
 
+
 ## Installing
 
 > Or manually copy `xiaomi_gateway3` folder to `custom_components` folder in your HomeAssistant config folder
@@ -17,13 +18,14 @@ or
 
 > You can install component with [HACS](https://hacs.xyz) custom repo: `al-one/hass-miio-yeelink`
 
+
 ## Config
 
-** HomeAssistant GUI **
+### HomeAssistant GUI
 
 > Configuration > Integration > ➕ > Miio For Yeelink
 
-** Configuration variables: **
+### Configuration variables:
 
 - **host**(*Required*): The IP of your device
 - **token**(*Required*): The Token of your device
