@@ -2,12 +2,17 @@
 
 ## Tested Devices
 
+- MJXDD02YL | yeelink.light.ceiling21
 - MJXDD01SYL | yeelink.light.ceiling22
 - MJXDD03YL | yeelink.light.ceiling23
 - YLXD56YL | yeelink.light.ceiling18
 - YLMB05YL | yeelink.light.panel1
 - YLYB02YL | yeelink.bhf_light.v2
 - YLFD02YL | yeelink.light.fancl1
+
+## Tested By Community
+- yeelink.bhf_light.v1
+- yeelink.light.lamp3
 
 
 ## Installing

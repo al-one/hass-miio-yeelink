@@ -341,6 +341,8 @@ class YeelightEntity(MiioEntity, LightEntity):
         num = 5700
         if self._model in ['yeelink.light.ceiling18','YLXD56YL','YLXD53YL']:
             num = 6500
+        elif self._model in ['yeelink.light.ceiling21','MJXDD02YL']:
+            num = 6300
         elif self._model in ['yeelink.light.ceiling22','MJXDD01SYL','yeelink.light.ceiling23','MJXDD03SYL']:
             num = 6000
         return num

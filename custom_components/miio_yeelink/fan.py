@@ -24,7 +24,7 @@ async def async_add_entities_from_config(hass, config, async_add_entities):
     mode  = config.get(CONF_MODE)
     model = config.get(CONF_MODEL)
     entities = []
-    if model in ['yeelink.bhf_light.v2']:
+    if model in ['yeelink.bhf_light.v1','yeelink.bhf_light.v2']:
         cfg = config.copy()
         for m in ['warmwind', 'venting', 'drying', 'drying_cloth', 'coolwind']:
             cfg.update({CONF_NAME: f'{name} {m}'})
