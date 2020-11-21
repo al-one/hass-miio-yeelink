@@ -601,7 +601,6 @@ class MiotLightEntity(MiotEntity, LightEntity):
         'delayoff' : {'siid':2, 'piid':7},
         'init_opt' : {'siid':4, 'piid':1},
         'nighttime': {'siid':4, 'piid':2},
-        'scenes'   : {'siid':4, 'piid':3},
     }
     def __init__(self, config):
         name  = config[CONF_NAME]
@@ -609,6 +608,11 @@ class MiotLightEntity(MiotEntity, LightEntity):
         token = config[CONF_TOKEN]
         model = config.get(CONF_MODEL)
         _LOGGER.info('Initializing with host %s (token %s...)', host, token[:5])
+
+        if model in ['yeelink.light.fancl1','YLFD02YL']:
+            self.mapping.update({
+                'scenes' : {'siid':4, 'piid':3},
+            })
 
         self._device = MiotDevice(self.mapping, host, token)
         super().__init__(name, self._device)
@@ -635,7 +639,7 @@ class MiotLightEntity(MiotEntity, LightEntity):
     @property
     def max_mireds(self):
         num = 5700
-        if self._model in ['yeelink.light.fancl1','YLFD02YL']:
+        if self._model in ['yeelink.light.fancl1','YLFD02YL','yeelink.light.fancl2','YLFD001']:
             num = 6500
         return num
 
@@ -713,6 +717,12 @@ class MiotFanEntity(MiotEntity, FanEntity):
         token = config[CONF_TOKEN]
         model = config.get(CONF_MODEL)
         _LOGGER.info('Initializing with host %s (token %s...)', host, token[:5])
+
+        if model in ['yeelink.light.fancl2','YLFD001']:
+            # http://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:light:0000A001:yeelink-fancl2:1
+            self.mapping.update({
+                'dalayoff' : {'siid':3, 'piid':11},
+            })
 
         self._device = MiotDevice(self.mapping, host, token)
         super().__init__(name, self._device)
