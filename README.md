@@ -17,7 +17,7 @@
 
 ## Installing
 
-> Download and copy `xiaomi_gateway3` folder to `custom_components` folder in your HomeAssistant config folder
+> Download and copy `miio_yeelink` folder to `custom_components` folder in your HomeAssistant config folder
 
 or
 
