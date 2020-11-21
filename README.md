@@ -40,3 +40,11 @@ or
 - **name**(*Optional*): The name of your device
 - **model**(*Optional*): The model of your device (like: yeelink.light.ceiling22), Get form miio info if empty
 - **mode**(*Optional*): `light,fan` Guess from Model if empty
+
+
+## Obtain miio token
+
+- Use MiHome mod by [@vevsvevs](https://github.com/custom-components/ble_monitor/issues/7#issuecomment-595874419)
+  1. Down apk from [СКАЧАТЬ ВЕРСИЮ 5.x.x](https://www.kapiba.ru/2017/11/mi-home.html)
+  2. Create folder `/your_interlal_storage/vevs/logs/`
+  3. Find token from `vevs/logs/misc/devices.txt`
