@@ -9,6 +9,7 @@
 - YLMB05YL | yeelink.light.panel1
 - YLYB02YL | yeelink.bhf_light.v2
 - YLFD02YL | yeelink.light.fancl1
+- YLYB05YL | yeelink.ven_fan.vf1
 
 ## Tested By Community
 - yeelink.bhf_light.v1
