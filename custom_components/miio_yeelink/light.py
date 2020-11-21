@@ -49,7 +49,7 @@ async def async_add_entities_from_config(hass, config, async_add_entities):
     host = config[CONF_HOST]
     model = config.get(CONF_MODEL)
     entities = []
-    if model in ['yeelink.light.fancl1']:
+    if model.find('light.fancl') > 0:
         entity = MiotLightEntity(config)
         entities.append(entity)
     else:
