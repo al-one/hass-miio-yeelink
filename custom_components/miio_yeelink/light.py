@@ -58,13 +58,6 @@ async def async_add_entities_from_config(hass, config, async_add_entities):
     hass.data[DATA_KEY][host] = entity
     async_add_entities(entities, update_before_add = True)
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
-    config = hass.data[DOMAIN]['configs'].get(config_entry.entry_id,config_entry.data)
-    await async_add_entities_from_config(hass, config, async_add_entities)
-
-async def async_setup_platform(hass, config, async_add_entities, discovery_info = None):
-    await async_add_entities_from_config(hass, config, async_add_entities)
-
     async def async_service_handler(service):
         method = SERVICE_TO_METHOD.get(service.service)
         params = {
@@ -90,3 +83,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info 
     for srv in SERVICE_TO_METHOD:
         schema = SERVICE_TO_METHOD[srv].get('schema', XIAOMI_MIIO_SERVICE_SCHEMA)
         hass.services.async_register(DOMAIN, srv, async_service_handler, schema = schema)
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    config = hass.data[DOMAIN]['configs'].get(config_entry.entry_id,config_entry.data)
+    await async_add_entities_from_config(hass, config, async_add_entities)
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info = None):
+    await async_add_entities_from_config(hass, config, async_add_entities)
