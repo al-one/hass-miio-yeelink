@@ -30,6 +30,12 @@ async def async_add_entities_from_config(hass, config, async_add_entities):
             cfg.update({CONF_NAME: f'{name} {m}'})
             entity = BathHeaterEntity(cfg, m)
             entities.append(entity)
+    elif model in ['yeelink.bhf_light.v5']:
+        cfg = config.copy()
+        for m in ['warmwind', 'venting', 'drying', 'coolwind', 'fastwarm', 'fastdefog']:
+            cfg.update({CONF_NAME: f'{name} {m}'})
+            entity = BathHeaterEntityV5(cfg, m)
+            entities.append(entity)
     elif model.find('light.fancl') > 0:
         entity = MiotFanEntity(config)
         entities.append(entity)

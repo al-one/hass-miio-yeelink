@@ -524,6 +524,112 @@ class BathHeaterEntity(MiioEntity, FanEntity):
                 })
 
 
+class BathHeaterEntityV5(BathHeaterEntity):
+    def __init__(self, config, mode = 'warmwind'):
+        super().__init__(config, mode)
+        self._supported_features = SUPPORT_SET_SPEED | SUPPORT_OSCILLATE | SUPPORT_DIRECTION
+        self._props = ['power','bh_mode','fan_speed_idx','swing_action','swing_angle','bh_cfg_delayoff','bh_delayoff','light_cfg_delayoff','delayoff','aim_temp']
+        self._state_attrs.update({'entity_class': self.__class__.__name__})
+
+    async def async_update(self):
+        await super().async_update()
+        if self._available:
+            attrs = self._state_attrs
+            self._state = self._mode in attrs.get('bh_mode','').split('|')
+            if 'fan_speed_idx' in attrs:
+                fls = '%03d' % int(attrs.get('fan_speed_idx',0))
+                self._mode_speeds = {
+                    'warmwind' : fls[0],
+                    'coolwind' : fls[1],
+                    'venting'  : fls[2],
+                }
+
+    async def async_turn_on(self, speed: Optional[str] = None, **kwargs):
+        _LOGGER.debug('Turning on for %s. speed: %s %s', self._name, speed, kwargs)
+        if speed == SPEED_OFF:
+            await self.async_turn_off()
+        else:
+            hasSpeed = self._mode in self._mode_speeds
+            spd = self.speed_to_gears(speed or SPEED_HIGH) if hasSpeed else 0
+            result = await self.async_command('set_bh_mode', [self._mode, spd])
+            if result:
+                self._state = True
+                if hasSpeed:
+                    self._mode_speeds.update({
+                        self._mode: spd,
+                    })
+
+    async def async_turn_off(self, **kwargs):
+        _LOGGER.debug('Turning off for %s.', self._name)
+        result = await self.async_command('set_bh_mode', ['bh_off', 0])
+        if result:
+            self._state = False
+
+    @property
+    def speed(self):
+        spd = int(self._mode_speeds.get(self._mode,0))
+        if spd >= 2:
+            return SPEED_HIGH
+        return SPEED_LOW
+
+    @property
+    def mode_speeds(self):
+        return self._mode_speeds
+
+    @property
+    def speed_list(self):
+        fls = [SPEED_LOW, SPEED_HIGH]
+        return fls
+
+    @staticmethod
+    def speed_to_gears(speed = None):
+        spd = 0
+        if speed == SPEED_LOW:
+            spd = 1
+        if speed == SPEED_HIGH:
+            spd = 2 if self._mode == 'warmwind' else 3
+        return spd
+
+
+    async def async_set_speed(self, speed: Optional[str] = None):
+        await self.async_turn_on(speed)
+
+    @property
+    def oscillating(self):
+        return self._state_attrs.get('swing_action') == 'swing'
+
+    async def async_oscillate(self, oscillating: bool):
+        act = 'swing' if oscillating else 'stop'
+        _LOGGER.debug('Setting oscillating for %s: %s(%s)', self._name, act, oscillating)
+        result = await self.async_command('set_swing', [act, 0])
+        if result:
+            self._state_attrs.update({
+                'swing_action': act,
+            })
+
+    @property
+    def current_direction(self):
+        if int(self._state_attrs.get('swing_angle',0)) > 90:
+            return DIRECTION_REVERSE
+        return DIRECTION_FORWARD
+
+    async def async_set_direction(self, direction: str):
+        act = 'angle'
+        try:
+            num = int(direction)
+        except:
+            num = 0
+        if num < 1:
+            num = 120 if direction == DIRECTION_REVERSE else 90
+        _LOGGER.debug('Setting direction for %s: %s(%s)', self._name, direction, num)
+        result = await self.async_command('set_swing', [act, num])
+        if result:
+            self._state_attrs.update({
+                'swing_action': act,
+                'swing_angle':  num,
+            })
+
+
 class VenFanEntity(BathHeaterEntity):
     def __init__(self, config, mode = 'coolwind'):
         super().__init__(config, mode)
@@ -539,7 +645,7 @@ class VenFanEntity(BathHeaterEntity):
 
     @property
     def speed(self):
-        if int(self._state_attrs.get('gears',0)) >= 1:
+        if int(self._state_attrs.get('gears', 0)) >= 1:
             return SPEED_HIGH
         return SPEED_LOW
 
