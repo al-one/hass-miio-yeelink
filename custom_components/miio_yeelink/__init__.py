@@ -436,7 +436,10 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         self._mode = mode
         self._supported_features = SUPPORT_SET_SPEED
         self._props = ['power','bright','delayoff','nl_br','nighttime','bh_mode','bh_delayoff','light_mode','fan_speed_idx']
-        self._state_attrs.update({'entity_class': self.__class__.__name__})
+        self._state_attrs.update({
+            'mode': mode,
+            'entity_class': self.__class__.__name__,
+        })
         self._mode_speeds = {}
 
     @property
@@ -535,7 +538,8 @@ class BathHeaterEntityV5(BathHeaterEntity):
         await super().async_update()
         if self._available:
             attrs = self._state_attrs
-            self._state = self._mode in attrs.get('bh_mode','').split('|')
+            mode = attrs.get('bh_mode') or ''
+            self._state = self._mode == mode or self._mode in mode.split('|')
             if 'fan_speed_idx' in attrs:
                 fls = '%03d' % int(attrs.get('fan_speed_idx',0))
                 self._mode_speeds = {
