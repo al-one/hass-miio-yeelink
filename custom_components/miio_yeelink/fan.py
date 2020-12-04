@@ -6,6 +6,7 @@ from homeassistant.const import *
 
 from . import (
     BathHeaterEntity,
+    BathHeaterEntityV5,
     VenFanEntity,
     MiotFanEntity,
     DOMAIN,
