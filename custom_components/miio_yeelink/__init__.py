@@ -145,7 +145,7 @@ class MiioEntity(ToggleEntity):
     def __init__(self, name, device):
         self._device = device
         try:
-            self._miio_info = await hass.async_add_executor_job(device.info)
+            self._miio_info = device.info()
         except DeviceException as exc:
             _LOGGER.error("Device %s unavailable or token incorrect: %s", name, exc)
             raise PlatformNotReady from exc
