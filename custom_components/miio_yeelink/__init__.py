@@ -7,6 +7,7 @@ import voluptuous as vol
 
 from homeassistant import core, config_entries
 from homeassistant.const import *
+from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.entity_component import EntityComponent
 import homeassistant.helpers.device_registry as dr
@@ -143,7 +144,11 @@ class MiotDevice(Device):
 class MiioEntity(ToggleEntity):
     def __init__(self, name, device):
         self._device = device
-        self._miio_info = device.info()
+        try:
+            self._miio_info = await hass.async_add_executor_job(device.info)
+        except DeviceException as exc:
+            _LOGGER.error("Device %s unavailable or token incorrect: %s", name, exc)
+            raise PlatformNotReady from exc
         self._unique_did = dr.format_mac(self._miio_info.mac_address)
         self._unique_id = self._unique_did
         self._name = name
