@@ -11,6 +11,19 @@ send_command:
       description: Params for the method.
       example: ['on']
 
+set_property:
+  description: Set miot property.
+  fields:
+    entity_id:
+      description: Name of the entity.
+      example: "light.yeelink_fancl1_45f3"
+    field:
+      description: Field of property.
+      example: power
+    value:
+      description: Value of property.
+      example: True
+
 light_set_scene:
   description: Set a scene.
   fields:
