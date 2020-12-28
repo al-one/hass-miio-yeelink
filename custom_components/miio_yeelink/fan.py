@@ -25,15 +25,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     config = hass.data[DOMAIN]['configs'].get(config_entry.entry_id, config_entry.data)
     await async_setup_platform(hass, config, async_add_entities)
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info = None):
+
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     if DATA_KEY not in hass.data:
         hass.data[DATA_KEY] = {}
-    host  = config[CONF_HOST]
-    name  = config[CONF_NAME]
-    mode  = config.get(CONF_MODE)
+    host = config[CONF_HOST]
+    name = config[CONF_NAME]
+    mode = config.get(CONF_MODE)
     model = config.get(CONF_MODEL)
     entities = []
-    if model in ['yeelink.bhf_light.v1','yeelink.bhf_light.v2']:
+    if model in ['yeelink.bhf_light.v1', 'yeelink.bhf_light.v2']:
         cfg = config.copy()
         for m in ['warmwind', 'venting', 'drying', 'drying_cloth', 'coolwind']:
             cfg.update({CONF_NAME: f'{name} {m}'})
@@ -56,5 +57,5 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info 
         entities.append(entity)
     for entity in entities:
         hass.data[DOMAIN]['entities'][entity.unique_id] = entity
-    async_add_entities(entities, update_before_add = True)
+    async_add_entities(entities, update_before_add=True)
     bind_services_to_entries(hass, SERVICE_TO_METHOD)
