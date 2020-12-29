@@ -36,15 +36,21 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     entities = []
     if model in ['yeelink.bhf_light.v1', 'yeelink.bhf_light.v2']:
         cfg = config.copy()
+        prt = None
         for m in ['warmwind', 'venting', 'drying', 'drying_cloth', 'coolwind']:
             cfg.update({CONF_NAME: f'{name} {m}'})
-            entity = BathHeaterEntity(cfg, m)
+            entity = BathHeaterEntity(cfg, m, prt)
+            if prt is None:
+                prt = entity
             entities.append(entity)
     elif model in ['yeelink.bhf_light.v5']:
         cfg = config.copy()
+        prt = None
         for m in ['warmwind', 'venting', 'drying', 'coolwind', 'fastwarm', 'fastdefog']:
             cfg.update({CONF_NAME: f'{name} {m}'})
-            entity = BathHeaterEntityV5(cfg, m)
+            entity = BathHeaterEntityV5(cfg, m, prt)
+            if prt is None:
+                prt = entity
             entities.append(entity)
     elif model.find('light.fancl') > 0:
         entity = MiotFanEntity(config)

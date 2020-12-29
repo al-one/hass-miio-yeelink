@@ -336,7 +336,6 @@ class YeelightEntity(MiioEntity, LightEntity):
         name = config[CONF_NAME]
         host = config[CONF_HOST]
         token = config[CONF_TOKEN]
-        model = config.get(CONF_MODEL)
         _LOGGER.info('Initializing with host %s (token %s...)', host, token[:5])
 
         self._device = Yeelight(host, token)
@@ -344,7 +343,7 @@ class YeelightEntity(MiioEntity, LightEntity):
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-light'
 
         self._supported_features = SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
-        if self._model in ['yeelink.bhf_light.v2']:
+        if self._model.find('bhf_light') > 0:
             self._supported_features = SUPPORT_BRIGHTNESS
 
         self._props = ['power', 'nl_br', 'delayoff']
@@ -424,7 +423,7 @@ class YeelightEntity(MiioEntity, LightEntity):
             if result:
                 self._brightness = brightness
 
-        if self._state != True:
+        if not self._state:
             await self._try_command('Turning the light on failed.', self._device.on)
 
     async def async_set_scene(self, scene=0, params=None):
@@ -458,7 +457,7 @@ class YeelightEntity(MiioEntity, LightEntity):
 
 
 class BathHeaterEntity(MiioEntity, FanEntity):
-    def __init__(self, config, mode='warmwind'):
+    def __init__(self, config, mode='warmwind', parent=None):
         name = config[CONF_NAME]
         host = config[CONF_HOST]
         token = config[CONF_TOKEN]
@@ -469,6 +468,7 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-{mode}'
         self._mode = mode
+        self._parent = parent
         self._supported_features = SUPPORT_SET_SPEED
         self._props = ['power', 'bright', 'delayoff', 'nl_br', 'nighttime', 'bh_mode', 'bh_delayoff', 'light_mode',
                        'fan_speed_idx']
@@ -483,18 +483,26 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         return self._mode
 
     async def async_update(self):
-        await super().async_update()
+        if self._parent and self._parent.available:
+            self._available = True
+            self._state_attrs.update(self._parent.device_state_attributes)
+            self._state_attrs.update({
+                'mode': self._mode,
+                'entity_class': self.__class__.__name__,
+            })
+        else:
+            await super().async_update()
         if self._available:
             attrs = self._state_attrs
             self._state = attrs.get('bh_mode') == self._mode
             if 'fan_speed_idx' in attrs:
                 fls = '%05d' % int(attrs.get('fan_speed_idx', 0))
                 self._mode_speeds = {
-                    'warmwind': fls[4],
-                    'venting': fls[3],
-                    'drying': fls[2],
                     'drying_cloth': fls[0],
                     'coolwind': fls[1],
+                    'drying': fls[2],
+                    'venting': fls[3],
+                    'warmwind': fls[4],
                 }
 
     async def async_turn_on(self, speed: Optional[str] = None, **kwargs):
@@ -502,10 +510,13 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         if speed == SPEED_OFF:
             await self.async_turn_off()
         else:
-            if self._state != True:
+            if not self._state:
                 result = await self.async_command('set_bh_mode', [self._mode])
                 if result:
                     self._state = True
+                    self.update_attrs({
+                        'bh_mode': self._mode,
+                    })
             if speed:
                 await self.async_set_speed(speed)
 
@@ -514,6 +525,9 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         result = await self.async_command('stop_bath_heater')
         if result:
             self._state = False
+            self.update_attrs({
+                'bh_mode': 'bh_off',
+            })
 
     @property
     def speed(self):
@@ -557,9 +571,20 @@ class BathHeaterEntity(MiioEntity, FanEntity):
                 self._mode: spd,
             })
             if 'gears' in self._state_attrs:
-                self._state_attrs.update({
+                self.update_attrs({
                     'gears': spd,
                 })
+            if 'fan_speed_idx' in self._state_attrs:
+                lst = [str(v) for k, v in self._mode_speeds.items()]
+                self.update_attrs({
+                    'fan_speed_idx': ''.join(lst).lstrip('0') or '0',
+                })
+
+    def update_attrs(self, attrs, update_parent=True):
+        self._state_attrs.update(attrs or {})
+        if update_parent and self._parent and hasattr(self._parent, 'update_attrs'):
+            self._parent.update_attrs(attrs or {}, False)
+        return self._state_attrs
 
 
 class BathHeaterEntityV5(BathHeaterEntity):
@@ -590,13 +615,18 @@ class BathHeaterEntityV5(BathHeaterEntity):
             await self.async_turn_off()
         else:
             hasSpeed = self._mode in self._mode_speeds
-            spd = self.speed_to_gears(speed or SPEED_HIGH) if hasSpeed else 0
+            spd = self.speed_to_gears(speed or SPEED_HIGH, self._mode) if hasSpeed else 0
             result = await self.async_command('set_bh_mode', [self._mode, spd])
             if result:
                 self._state = True
+                self.update_attrs({
+                    'bh_mode': self._mode,
+                })
                 if hasSpeed:
-                    self._mode_speeds.update({
-                        self._mode: spd,
+                    self._mode_speeds[self._mode] = spd
+                    lst = [str(v) for k, v in self._mode_speeds.items()]
+                    self.update_attrs({
+                        'fan_speed_idx': ''.join(lst).lstrip('0') or '0',
                     })
 
     async def async_turn_off(self, **kwargs):
@@ -604,6 +634,9 @@ class BathHeaterEntityV5(BathHeaterEntity):
         result = await self.async_command('set_bh_mode', ['bh_off', 0])
         if result:
             self._state = False
+            self.update_attrs({
+                'bh_mode': 'bh_off',
+            })
 
     @property
     def speed(self):
@@ -622,12 +655,12 @@ class BathHeaterEntityV5(BathHeaterEntity):
         return fls
 
     @staticmethod
-    def speed_to_gears(speed=None):
+    def speed_to_gears(speed=None, mode=None):
         spd = 0
         if speed == SPEED_LOW:
             spd = 1
         if speed == SPEED_HIGH:
-            spd = 2 if self._mode == 'warmwind' else 3
+            spd = 2 if mode == 'warmwind' else 3
         return spd
 
     async def async_set_speed(self, speed: Optional[str] = None):
@@ -642,7 +675,7 @@ class BathHeaterEntityV5(BathHeaterEntity):
         _LOGGER.debug('Setting oscillating for %s: %s(%s)', self._name, act, oscillating)
         result = await self.async_command('set_swing', [act, 0])
         if result:
-            self._state_attrs.update({
+            self.update_attrs({
                 'swing_action': act,
             })
 
@@ -654,16 +687,15 @@ class BathHeaterEntityV5(BathHeaterEntity):
 
     async def async_set_direction(self, direction: str):
         act = 'angle'
-        try:
+        num = 0
+        if f'{direction}'.isnumeric():
             num = int(direction)
-        except:
-            num = 0
         if num < 1:
             num = 120 if direction == DIRECTION_REVERSE else 90
         _LOGGER.debug('Setting direction for %s: %s(%s)', self._name, direction, num)
         result = await self.async_command('set_swing', [act, num])
         if result:
-            self._state_attrs.update({
+            self.update_attrs({
                 'swing_action': act,
                 'swing_angle': num,
             })
@@ -820,7 +852,7 @@ class MiotLightEntity(MiotEntity, LightEntity):
             if result:
                 self._brightness = brightness
 
-        if self._state != True:
+        if not self._state:
             await super().async_turn_on()
 
     async def async_set_scene(self, scene=0, params=None):
@@ -882,7 +914,7 @@ class MiotFanEntity(MiotEntity, FanEntity):
         if speed == SPEED_OFF:
             await self.async_turn_off()
         else:
-            if self._state != True:
+            if not self._state:
                 await super().async_turn_on()
             if speed:
                 await self.async_set_speed(speed)
