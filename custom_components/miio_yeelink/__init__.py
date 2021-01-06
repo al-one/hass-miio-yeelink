@@ -247,7 +247,7 @@ class MiioEntity(ToggleEntity):
         if mask_error is None:
             mask_error = f'Send miio command to {self._name}: {method} failed: %s'
         result = await self._try_command(mask_error, self._device.send, method, params)
-        if result == False:
+        if not result:
             _LOGGER.info('Send miio command to %s failed: %s(%s)', self._name, method, params)
         return result
 
@@ -265,11 +265,17 @@ class MiioEntity(ToggleEntity):
         self._state = attrs.get('power') == 'on'
         self._state_attrs.update(attrs)
 
+    def turn_on(self, **kwargs):
+        self._device.on()
+
     async def async_turn_on(self, **kwargs):
-        await self._try_command('Turning on failed.', self._device.on)
+        await self._try_command('Turning on failed.', self.turn_on)
+
+    def turn_off(self, **kwargs):
+        self._device.off()
 
     async def async_turn_off(self, **kwargs):
-        await self._try_command('Turning off failed.', self._device.off)
+        await self._try_command('Turning off failed.', self.turn_off)
 
 
 class MiotEntity(MiioEntity):
@@ -295,7 +301,7 @@ class MiotEntity(MiioEntity):
         if mask_error is None:
             mask_error = f'Send miot command to {self._name}: {method} failed: %s'
         result = await self._try_command(mask_error, self._device.send, method, params)
-        if result == False:
+        if not result:
             _LOGGER.info('Send miot command to %s failed: %s(%s)', self._name, method, params)
         return result
 
@@ -313,7 +319,7 @@ class MiotEntity(MiioEntity):
         }
         _LOGGER.debug('Got new state from %s: %s', self._name, attrs)
         self._available = True
-        self._state = True if attrs.get('power') else False
+        self._state = bool(attrs.get('power'))
         self._state_attrs.update(attrs)
 
     async def async_set_property(self, field, value):
@@ -562,7 +568,12 @@ class BathHeaterEntity(MiioEntity, FanEntity):
             spd = 9
         return spd
 
-    async def async_set_speed(self, speed: Optional[str] = None):
+    def set_speed(self, speed):
+        spd = self.speed_to_gears(speed)
+        _LOGGER.debug('Setting speed for %s: %s(%s)', self._name, speed, spd)
+        self._device.send('set_gears_idx', [spd])
+
+    async def async_set_speed(self, speed):
         spd = self.speed_to_gears(speed)
         _LOGGER.debug('Setting speed for %s: %s(%s)', self._name, speed, spd)
         result = await self.async_command('set_gears_idx', [spd])
@@ -580,6 +591,12 @@ class BathHeaterEntity(MiioEntity, FanEntity):
                     'fan_speed_idx': ''.join(lst).lstrip('0') or '0',
                 })
 
+    def set_direction(self, direction):
+        pass
+
+    def oscillate(self, oscillating):
+        pass
+
     def update_attrs(self, attrs, update_parent=True):
         self._state_attrs.update(attrs or {})
         if update_parent and self._parent and hasattr(self._parent, 'update_attrs'):
@@ -588,8 +605,8 @@ class BathHeaterEntity(MiioEntity, FanEntity):
 
 
 class BathHeaterEntityV5(BathHeaterEntity):
-    def __init__(self, config, mode='warmwind'):
-        super().__init__(config, mode)
+    def __init__(self, config, mode='warmwind', parent=None):
+        super().__init__(config, mode, parent)
         self._supported_features = SUPPORT_SET_SPEED | SUPPORT_OSCILLATE | SUPPORT_DIRECTION
         self._props = ['power', 'bh_mode', 'fan_speed_idx', 'swing_action', 'swing_angle', 'bh_cfg_delayoff',
                        'bh_delayoff', 'light_cfg_delayoff', 'delayoff', 'aim_temp']
@@ -663,7 +680,7 @@ class BathHeaterEntityV5(BathHeaterEntity):
             spd = 2 if mode == 'warmwind' else 3
         return spd
 
-    async def async_set_speed(self, speed: Optional[str] = None):
+    async def async_set_speed(self, speed):
         await self.async_turn_on(speed)
 
     @property
