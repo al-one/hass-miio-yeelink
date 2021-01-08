@@ -3,6 +3,7 @@
     "name": "Miio For Yeelink",
     "config_flow": true,
     "documentation": "https://github.com/al-one/hass-miio-yeelink",
+    "issue_tracker": "https://github.com/al-one/hass-miio-yeelink/issues",
     "requirements": [
       "construct>=2.10.56",
       "python-miio>=0.5.3"
