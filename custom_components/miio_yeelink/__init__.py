@@ -13,9 +13,27 @@ from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.entity_component import EntityComponent
 import homeassistant.helpers.device_registry as dr
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
 
-from homeassistant.components.light import *
-from homeassistant.components.fan import *
+from homeassistant.components.light import (
+    LightEntity,
+    SUPPORT_BRIGHTNESS,
+    SUPPORT_COLOR_TEMP,
+    ATTR_BRIGHTNESS,
+    ATTR_COLOR_TEMP,
+)
+from homeassistant.components.fan import (
+    FanEntity,
+    SUPPORT_SET_SPEED,
+    SUPPORT_DIRECTION,
+    SUPPORT_OSCILLATE,
+    SPEED_OFF,
+    SPEED_LOW,
+    SPEED_MEDIUM,
+    SPEED_HIGH,
+    DIRECTION_FORWARD,
+    DIRECTION_REVERSE,
+)
 
 from miio import (
     Device,
@@ -31,9 +49,6 @@ SCAN_INTERVAL = timedelta(seconds=60)
 DEFAULT_NAME = 'Xiaomi Yeelink'
 CONF_MODEL = 'model'
 SPEED_FIERCE = 'fierce'
-
-CCT_MIN = 1
-CCT_MAX = 100
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -370,14 +385,10 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     @property
     def color_temp(self):
-        return self._color_temp
+        return self.translate_mired(self._color_temp)
 
     @property
     def min_mireds(self):
-        return 2700
-
-    @property
-    def max_mireds(self):
         num = 5700
         if self._model in ['yeelink.light.ceiling18', 'YLXD56YL', 'YLXD53YL']:
             num = 6500
@@ -385,7 +396,12 @@ class YeelightEntity(MiioEntity, LightEntity):
             num = 6300
         elif self._model in ['yeelink.light.ceiling22', 'MJXDD01SYL', 'yeelink.light.ceiling23', 'MJXDD03SYL']:
             num = 6000
-        return num
+        return self.translate_mired(num)
+
+    @property
+    def max_mireds(self):
+        num = 2700
+        return self.translate_mired(num)
 
     @property
     def delay_off(self):
@@ -404,13 +420,11 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs):
         if self.supported_features & SUPPORT_COLOR_TEMP and ATTR_COLOR_TEMP in kwargs:
-            color_temp = kwargs[ATTR_COLOR_TEMP]
-            percent_color_temp = self.translate_color_temp(
-                color_temp, self.min_mireds, self.max_mireds, CCT_MIN, CCT_MAX
-            )
-            _LOGGER.debug('Setting color temperature: %s mireds, %s%% cct', color_temp, percent_color_temp)
+            mired = kwargs[ATTR_COLOR_TEMP]
+            color_temp = self.translate_mired(mired)
+            _LOGGER.debug('Setting color temperature: %s mireds, %s ct', mired, color_temp)
             result = await self._try_command(
-                'Setting color temperature failed: %s mireds',
+                'Setting color temperature failed: %s ct',
                 self._device.set_color_temp,
                 color_temp,
             )
@@ -455,11 +469,8 @@ class YeelightEntity(MiioEntity, LightEntity):
         )
 
     @staticmethod
-    def translate_color_temp(value, left_min, left_max, right_min, right_max):
-        left_span = left_max - left_min
-        right_span = right_max - right_min
-        value_scaled = float(value - left_min) / float(left_span)
-        return int(right_min + (value_scaled * right_span))
+    def translate_mired(num):
+        return round(1000000 / num)
 
 
 class BathHeaterEntity(MiioEntity, FanEntity):
@@ -511,7 +522,7 @@ class BathHeaterEntity(MiioEntity, FanEntity):
                     'warmwind': fls[4],
                 }
 
-    async def async_turn_on(self, speed: Optional[str] = None, **kwargs):
+    async def async_turn_on(self, speed=None, **kwargs):
         _LOGGER.debug('Turning on for %s. speed: %s %s', self._name, speed, kwargs)
         if speed == SPEED_OFF:
             await self.async_turn_off()
@@ -626,7 +637,7 @@ class BathHeaterEntityV5(BathHeaterEntity):
                     'venting': fls[2],
                 }
 
-    async def async_turn_on(self, speed: Optional[str] = None, **kwargs):
+    async def async_turn_on(self, speed=None, **kwargs):
         _LOGGER.debug('Turning on for %s. speed: %s %s', self._name, speed, kwargs)
         if speed == SPEED_OFF:
             await self.async_turn_off()
@@ -787,13 +798,13 @@ class VenFanEntity(BathHeaterEntity):
 class MiotLightEntity(MiotEntity, LightEntity):
     mapping = {
         # http://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:light:0000A001:yeelink-fancl1:1
-        'power': {'siid': 2, 'piid': 1},
-        'mode': {'siid': 2, 'piid': 2},
-        'bright': {'siid': 2, 'piid': 3},
-        'ct': {'siid': 2, 'piid': 5},
-        'flow': {'siid': 2, 'piid': 6},
-        'delayoff': {'siid': 2, 'piid': 7},
-        'init_opt': {'siid': 4, 'piid': 1},
+        'power':     {'siid': 2, 'piid': 1},
+        'mode':      {'siid': 2, 'piid': 2},
+        'bright':    {'siid': 2, 'piid': 3},
+        'ct':        {'siid': 2, 'piid': 5},
+        'flow':      {'siid': 2, 'piid': 6},
+        'delayoff':  {'siid': 2, 'piid': 7},
+        'init_opt':  {'siid': 4, 'piid': 1},
         'nighttime': {'siid': 4, 'piid': 2},
     }
 
@@ -825,18 +836,19 @@ class MiotLightEntity(MiotEntity, LightEntity):
 
     @property
     def color_temp(self):
-        return self._color_temp
+        return self.translate_mired(self._color_temp)
 
     @property
     def min_mireds(self):
-        return 2700
-
-    @property
-    def max_mireds(self):
         num = 5700
         if self._model in ['yeelink.light.fancl1', 'YLFD02YL', 'yeelink.light.fancl2', 'YLFD001']:
             num = 6500
-        return num
+        return self.translate_mired(num)
+
+    @property
+    def max_mireds(self):
+        num = 2700
+        return self.translate_mired(num)
 
     @property
     def delay_off(self):
@@ -855,8 +867,9 @@ class MiotLightEntity(MiotEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs):
         if self.supported_features & SUPPORT_COLOR_TEMP and ATTR_COLOR_TEMP in kwargs:
-            color_temp = kwargs[ATTR_COLOR_TEMP]
-            _LOGGER.debug('Setting color temperature: %s mireds', color_temp)
+            mired = kwargs[ATTR_COLOR_TEMP]
+            color_temp = self.translate_mired(mired)
+            _LOGGER.debug('Setting color temperature: %s mireds, %s ct', mired, color_temp)
             result = await self.async_set_property('ct', color_temp)
             if result:
                 self._color_temp = color_temp
@@ -894,15 +907,19 @@ class MiotLightEntity(MiotEntity, LightEntity):
             'Setting the turn off delay failed: %s',
         )
 
+    @staticmethod
+    def translate_mired(num):
+        return round(1000000 / num)
+
 
 class MiotFanEntity(MiotEntity, FanEntity):
     mapping = {
         # http://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:light:0000A001:yeelink-fancl1:1
-        'power': {'siid': 3, 'piid': 1},
-        'gears': {'siid': 3, 'piid': 2},
-        'mode': {'siid': 3, 'piid': 7},
-        'status': {'siid': 3, 'piid': 8},
-        'fault': {'siid': 3, 'piid': 9},
+        'power':    {'siid': 3, 'piid': 1},
+        'gears':    {'siid': 3, 'piid': 2},
+        'mode':     {'siid': 3, 'piid': 7},
+        'status':   {'siid': 3, 'piid': 8},
+        'fault':    {'siid': 3, 'piid': 9},
         'dalayoff': {'siid': 3, 'piid': 10},
         'init_opt': {'siid': 5, 'piid': 1},
     }
@@ -926,7 +943,7 @@ class MiotFanEntity(MiotEntity, FanEntity):
         self._supported_features = SUPPORT_SET_SPEED
         self._state_attrs.update({'entity_class': self.__class__.__name__})
 
-    async def async_turn_on(self, speed: Optional[str] = None, **kwargs):
+    async def async_turn_on(self, speed=None, **kwargs):
         _LOGGER.debug('Turning on for %s. speed: %s %s', self._name, speed, kwargs)
         if speed == SPEED_OFF:
             await self.async_turn_off()
@@ -958,7 +975,7 @@ class MiotFanEntity(MiotEntity, FanEntity):
             spd = 2
         return spd
 
-    async def async_set_speed(self, speed: Optional[str] = None):
+    async def async_set_speed(self, speed=None):
         spd = self.speed_to_gears(speed)
         _LOGGER.debug('Setting speed for %s: %s(%s)', self._name, speed, spd)
         result = await self.async_set_property('gears', spd)
