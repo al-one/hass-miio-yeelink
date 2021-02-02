@@ -381,7 +381,7 @@ class YeelightEntity(MiioEntity, LightEntity):
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-light'
 
         self._supported_features = SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
-        if self._model.find('bhf_light') > 0:
+        if self._model.find('bhf_light') >= 0 and self._model not in ['yeelink.bhf_light.v1']:
             self._supported_features = SUPPORT_BRIGHTNESS
 
         self._props = ['power', 'nl_br', 'delayoff']
@@ -528,8 +528,14 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         self._mode = mode
         self._parent = parent
         self._supported_features = SUPPORT_SET_SPEED
-        self._props = ['power', 'bright', 'delayoff', 'nl_br', 'nighttime', 'bh_mode', 'bh_delayoff', 'light_mode',
-                       'fan_speed_idx']
+        self._props = [
+            'power', 'bright', 'delayoff', 'nl_br', 'nighttime',
+            'bh_mode', 'bh_delayoff', 'light_mode', 'fan_speed_idx',
+        ]
+        if model in ['yeelink.bhf_light.v1']:
+            self._props.append('temperature')
+            self._props.append('humidity')
+            self._props.append('aim_temp')
         self._state_attrs.update({
             'mode': mode,
             'entity_class': self.__class__.__name__,
