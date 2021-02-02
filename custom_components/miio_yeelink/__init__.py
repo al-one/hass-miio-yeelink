@@ -413,13 +413,13 @@ class YeelightEntity(MiioEntity, LightEntity):
     @property
     def hs_color(self):
         if 'rgb' in self._state_attrs:
-            rgb = int_to_rgb(round(self._state_attrs['rgb'] or 0))
+            rgb = int_to_rgb(int(self._state_attrs['rgb'] or 0))
             return color.color_RGB_to_hs(*rgb)
         return None
 
     @property
     def min_mireds(self):
-        num = round(self.custom_config('max_color_temp', 5700) or 0)
+        num = int(self.custom_config('max_color_temp', 5700) or 0)
         if self._model in ['yeelink.light.ceiling18', 'YLXD56YL', 'YLXD53YL']:
             num = 6500
         elif self._model in ['yeelink.light.ceiling21', 'MJXDD02YL']:
@@ -430,7 +430,7 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     @property
     def max_mireds(self):
-        num = round(self.custom_config('min_color_temp', 2700) or 0)
+        num = int(self.custom_config('min_color_temp', 2700) or 0)
         return self.translate_mired(num)
 
     @property
