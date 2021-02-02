@@ -43,10 +43,24 @@ or
 - **model**(*Optional*): The model of your device (like: yeelink.light.ceiling22), Get form miio info if empty
 - **mode**(*Optional*): `light,fan` Guess from Model if empty
 
+### Customize entity
+
+```yaml
+# configuration.yaml
+homeassistant:
+  customize: !include customize.yaml
+
+# customize.yaml (Configuration > Customize > Select Entity > Add Other Attribute)
+light.yeelight_entity_id: # Your entity id
+  support_color: true
+  min_color_temp: 2700
+  max_color_temp: 6500
+```
+
 
 ## Obtain miio token
 
 - Use MiHome mod by [@vevsvevs](https://github.com/custom-components/ble_monitor/issues/7#issuecomment-595874419)
-  1. Down apk from [СКАЧАТЬ ВЕРСИЮ 5.x.x](https://www.kapiba.ru/2017/11/mi-home.html)
+  1. Down apk from [СКАЧАТЬ ВЕРСИЮ 6.x.x](https://www.kapiba.ru/2017/11/mi-home.html)
   2. Create folder `/your_interlal_storage/vevs/logs/`
   3. Find token from `vevs/logs/misc/devices.txt`

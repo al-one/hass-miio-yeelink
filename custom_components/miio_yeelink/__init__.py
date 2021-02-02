@@ -8,19 +8,23 @@ import voluptuous as vol
 
 from homeassistant import core, config_entries
 from homeassistant.const import *
+from homeassistant.config import DATA_CUSTOMIZE
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.entity_component import EntityComponent
 import homeassistant.helpers.device_registry as dr
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
+from homeassistant.util import color
 
 from homeassistant.components.light import (
     LightEntity,
     SUPPORT_BRIGHTNESS,
     SUPPORT_COLOR_TEMP,
+    SUPPORT_COLOR,
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP,
+    ATTR_HS_COLOR,
 )
 from homeassistant.components.fan import (
     FanEntity,
@@ -41,6 +45,10 @@ from miio import (
     DeviceException,
 )
 from miio.miot_device import MiotDevice
+from miio.utils import (
+    rgb_to_int,
+    int_to_rgb,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -292,6 +300,14 @@ class MiioEntity(ToggleEntity):
     async def async_turn_off(self, **kwargs):
         await self._try_command('Turning off failed.', self.turn_off)
 
+    def custom_config(self, key=None, default=None):
+        if not self.hass:
+            return default
+        if not self.entity_id:
+            return default
+        cfg = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+        return cfg if key is None else cfg.get(key, default)
+
 
 class MiotEntity(MiioEntity):
     def __init__(self, name, device):
@@ -301,6 +317,7 @@ class MiotEntity(MiioEntity):
     async def _try_command(self, mask_error, func, *args, **kwargs):
         try:
             results = await self.hass.async_add_executor_job(partial(func, *args, **kwargs))
+            result = None
             for result in results:
                 break
             _LOGGER.debug('Response received from miot %s: %s', self._name, result)
@@ -379,6 +396,12 @@ class YeelightEntity(MiioEntity, LightEntity):
         self._delay_off = None
         self._scenes = LIGHT_SCENES
 
+    async def async_added_to_hass(self):
+        cfg = self.custom_config() or {}
+        if cfg.get('support_color'):
+            self._supported_features |= SUPPORT_COLOR
+            self._props.append('rgb')
+
     @property
     def brightness(self):
         return self._brightness
@@ -388,8 +411,15 @@ class YeelightEntity(MiioEntity, LightEntity):
         return self.translate_mired(self._color_temp)
 
     @property
+    def hs_color(self):
+        if 'rgb' in self._state_attrs:
+            rgb = int_to_rgb(round(self._state_attrs['rgb'] or 0))
+            return color.color_RGB_to_hs(*rgb)
+        return None
+
+    @property
     def min_mireds(self):
-        num = 5700
+        num = round(self.custom_config('max_color_temp', 5700) or 0)
         if self._model in ['yeelink.light.ceiling18', 'YLXD56YL', 'YLXD53YL']:
             num = 6500
         elif self._model in ['yeelink.light.ceiling21', 'MJXDD02YL']:
@@ -400,7 +430,7 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     @property
     def max_mireds(self):
-        num = 2700
+        num = round(self.custom_config('min_color_temp', 2700) or 0)
         return self.translate_mired(num)
 
     @property
@@ -442,6 +472,17 @@ class YeelightEntity(MiioEntity, LightEntity):
             )
             if result:
                 self._brightness = brightness
+
+        if self.supported_features & SUPPORT_COLOR and ATTR_HS_COLOR in kwargs:
+            rgb = color.color_hs_to_RGB(*kwargs[ATTR_HS_COLOR])
+            _LOGGER.debug('Setting light: %s color: %s', self.name, rgb)
+            result = await self._try_command(
+                'Setting color failed: %s',
+                self._device.set_rgb,
+                rgb,
+            )
+            if result:
+                self._state_attrs['rgb'] = rgb_to_int(rgb)
 
         if not self._state:
             await self._try_command('Turning the light on failed.', self._device.on)
