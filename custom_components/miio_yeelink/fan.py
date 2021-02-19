@@ -43,7 +43,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             if prt is None:
                 prt = entity
             entities.append(entity)
-    elif model in ['yeelink.bhf_light.v5']:
+    elif model in ['yeelink.bhf_light.v5', 'yeelink.bhf_light.v6']:
         cfg = config.copy()
         prt = None
         for m in ['warmwind', 'venting', 'drying', 'coolwind', 'fastwarm', 'fastdefog']:
