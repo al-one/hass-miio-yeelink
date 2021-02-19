@@ -142,6 +142,8 @@ async def async_setup_entry(hass: core.HomeAssistant, config_entry: config_entri
             plats = ['light']
         elif model.find('ven_fan') > 0:
             plats = ['fan']
+        elif model.find('yeelink.light.') >= 0:
+            plats = ['light']
         else:
             plats = platforms
     hass.data[DOMAIN]['configs'][unique_id] = config
