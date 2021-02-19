@@ -207,7 +207,7 @@ class MiioEntity(ToggleEntity):
         self._unique_did = dr.format_mac(self._miio_info.mac_address)
         self._unique_id = self._unique_did
         self._name = name
-        self._model = self._miio_info.model or ''
+        self._model = str(self._miio_info.model or '')
         self._state = None
         self._available = False
         self._state_attrs = {
@@ -400,7 +400,7 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     async def async_added_to_hass(self):
         cfg = self.custom_config() or {}
-        if cfg.get('support_color'):
+        if cfg.get('support_color') or self._model.find('color') > 0:
             self._supported_features |= SUPPORT_COLOR
             self._props.append('rgb')
 
