@@ -22,11 +22,11 @@
 
 ## Installing
 
-> Download and copy `miio_yeelink` folder to `custom_components` folder in your HomeAssistant config folder
+> Download and copy `custom_components/miio_yeelink` folder to `custom_components` folder in your HomeAssistant config folder
 
 or
 
-> You can install component with [HACS](https://hacs.xyz) custom repo: `al-one/hass-miio-yeelink`
+> You can install component with [HACS](https://hacs.xyz)
 
 
 ## Config
@@ -51,8 +51,10 @@ homeassistant:
   customize: !include customize.yaml
 
 # customize.yaml (Configuration > Customize > Select Entity > Add Other Attribute)
-light.yeelight_entity_id: # Your entity id
+light.your_entity_id:
   support_color: true
+  support_brightness: true
+  support_color_temp: true
   min_color_temp: 2700
   max_color_temp: 6500
 ```

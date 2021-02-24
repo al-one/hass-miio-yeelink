@@ -403,6 +403,14 @@ class YeelightEntity(MiioEntity, LightEntity):
         if cfg.get('support_color') or self._model.find('color') > 0:
             self._supported_features |= SUPPORT_COLOR
             self._props.append('rgb')
+        if cfg.get('support_brightness'):
+            self._supported_features |= SUPPORT_BRIGHTNESS
+            if 'bright' not in self._props:
+                self._props.append('bright')
+        if cfg.get('support_color_temp'):
+            self._supported_features |= SUPPORT_COLOR_TEMP
+            if 'ct' not in self._props:
+                self._props.append('ct')
 
     @property
     def brightness(self):
