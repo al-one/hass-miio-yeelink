@@ -994,7 +994,8 @@ class MiotFanEntity(MiotEntity, FanEntity):
                 'dalayoff': {'siid': 3, 'piid': 11},
             })
 
-        self._device = MiotDevice(ip=host, token=token, mapping=self.mapping)
+        self._device = MiotDevice(ip=host, token=token)
+        self._device.mapping = self.mapping
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-fan'
         self._supported_features = SUPPORT_SET_SPEED
