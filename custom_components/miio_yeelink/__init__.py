@@ -378,7 +378,7 @@ class YeelightEntity(MiioEntity, LightEntity):
         token = config[CONF_TOKEN]
         _LOGGER.info('Initializing with host %s (token %s...)', host, token[:5])
 
-        self._device = Yeelight(host, token)
+        self._device = Yeelight(ip=host, token=token)
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-light'
 
@@ -532,7 +532,7 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         model = config.get(CONF_MODEL)
         _LOGGER.info('Initializing with host %s (token %s...)', host, token[:5])
 
-        self._device = Device(host, token)
+        self._device = Device(ip=host, token=token)
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-{mode}'
         self._mode = mode
@@ -877,7 +877,7 @@ class MiotLightEntity(MiotEntity, LightEntity):
                 'scenes': {'siid': 4, 'piid': 3},
             })
 
-        self._device = MiotDevice(self.mapping, host, token)
+        self._device = MiotDevice(ip=host, token=token, mapping=self.mapping)
         super().__init__(name, self._device)
 
         self._supported_features = SUPPORT_BRIGHTNESS | SUPPORT_COLOR_TEMP
@@ -994,7 +994,7 @@ class MiotFanEntity(MiotEntity, FanEntity):
                 'dalayoff': {'siid': 3, 'piid': 11},
             })
 
-        self._device = MiotDevice(self.mapping, host, token)
+        self._device = MiotDevice(ip=host, token=token, mapping=self.mapping)
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-fan'
         self._supported_features = SUPPORT_SET_SPEED
