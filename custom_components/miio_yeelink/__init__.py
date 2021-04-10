@@ -44,7 +44,7 @@ from miio import (
     Yeelight,
     DeviceException,
 )
-from miio.miot_device import MiotDevice
+from miio.miot_device import MiotDevice as MiotDeviceBase
 from miio.utils import (
     rgb_to_int,
     int_to_rgb,
@@ -194,6 +194,16 @@ def bind_services_to_entries(hass, services):
     for srv, obj in services.items():
         schema = obj.get('schema', XIAOMI_MIIO_SERVICE_SCHEMA)
         hass.services.async_register(DOMAIN, srv, async_service_handler, schema=schema)
+
+
+class MiotDevice(MiotDeviceBase):
+    def __init__(self, *args, mapping=None, **kwargs):
+        try:
+            super().__init__(*args, **kwargs)
+            if mapping is not None:
+                self.mapping = mapping
+        except TypeError:
+            super().__init__(mapping, *args, **kwargs)
 
 
 class MiioEntity(ToggleEntity):
