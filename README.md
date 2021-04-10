@@ -57,6 +57,10 @@ light.your_entity_id:
   support_color_temp: true
   min_color_temp: 2700
   max_color_temp: 6500
+
+fan.your_entity_id:
+  support_oscillate: true
+  support_direction: true
 ```
 
 

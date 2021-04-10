@@ -207,6 +207,8 @@ class MiotDevice(MiotDeviceBase):
 
 
 class MiioEntity(ToggleEntity):
+    _parent = None
+
     def __init__(self, name, device):
         self._device = device
         try:
@@ -312,12 +314,15 @@ class MiioEntity(ToggleEntity):
     async def async_turn_off(self, **kwargs):
         await self._try_command('Turning off failed.', self.turn_off)
 
-    def custom_config(self, key=None, default=None):
+    def custom_config(self, key=None, default=None, with_parent=False):
         if not self.hass:
             return default
         if not self.entity_id:
             return default
-        cfg = self.hass.data[DATA_CUSTOMIZE].get(self.entity_id)
+        cfg = {}
+        if with_parent and self._parent and self._parent.entity_id:
+            cfg = self.hass.data[DATA_CUSTOMIZE].get(self._parent.entity_id) or {}
+        cfg.update(self.hass.data[DATA_CUSTOMIZE].get(self.entity_id) or {})
         return cfg if key is None else cfg.get(key, default)
 
 
@@ -553,14 +558,24 @@ class BathHeaterEntity(MiioEntity, FanEntity):
             'bh_mode', 'bh_delayoff', 'light_mode', 'fan_speed_idx',
         ]
         if model in ['yeelink.bhf_light.v1']:
-            self._props.append('temperature')
-            self._props.append('humidity')
-            self._props.append('aim_temp')
+            self._props.extend(['temperature', 'humidity', 'aim_temp'])
         self._state_attrs.update({
             'mode': mode,
+            'parent_entity': parent.mode if parent else mode,
             'entity_class': self.__class__.__name__,
         })
         self._mode_speeds = {}
+
+    async def async_added_to_hass(self):
+        cfg = self.custom_config(with_parent=True) or {}
+        if cfg.get('support_oscillate'):
+            self._supported_features |= SUPPORT_OSCILLATE
+            if 'swing_action' not in self._props:
+                self._props.append('swing_action')
+        if cfg.get('support_direction'):
+            self._supported_features |= SUPPORT_DIRECTION
+            if 'swing_angle' not in self._props:
+                self._props.append('swing_angle')
 
     @property
     def mode(self):
@@ -669,16 +684,45 @@ class BathHeaterEntity(MiioEntity, FanEntity):
                     'fan_speed_idx': ''.join(lst).lstrip('0') or '0',
                 })
 
-    def set_direction(self, direction):
-        pass
+    @property
+    def oscillating(self):
+        return self._state_attrs.get('swing_action') == 'swing'
 
-    def oscillate(self, oscillating):
-        pass
+    async def async_oscillate(self, oscillating: bool):
+        act = 'swing' if oscillating else 'stop'
+        _LOGGER.debug('Setting oscillating for %s: %s(%s)', self._name, act, oscillating)
+        result = await self.async_command('set_swing', [act, 0])
+        if result:
+            self.update_attrs({
+                'swing_action': act,
+            })
+
+    @property
+    def current_direction(self):
+        if int(self._state_attrs.get('swing_angle', 0)) > 90:
+            return DIRECTION_REVERSE
+        return DIRECTION_FORWARD
+
+    async def async_set_direction(self, direction: str):
+        act = 'angle'
+        try:
+            num = int(direction)
+        except (TypeError, ValueError):
+            num = 0
+        if num < 1:
+            num = 120 if direction == DIRECTION_REVERSE else 90
+        _LOGGER.debug('Setting direction for %s: %s(%s)', self._name, direction, num)
+        result = await self.async_command('set_swing', [act, num])
+        if result:
+            self.update_attrs({
+                'swing_action': act,
+                'swing_angle': num,
+            })
 
     def update_attrs(self, attrs, update_parent=True):
         self._state_attrs.update(attrs or {})
         if update_parent and self._parent and hasattr(self._parent, 'update_attrs'):
-            self._parent.update_attrs(attrs or {}, False)
+            getattr(self._parent, 'update_attrs')(attrs or {}, False)
         return self._state_attrs
 
 
@@ -761,40 +805,6 @@ class BathHeaterEntityV5(BathHeaterEntity):
     async def async_set_speed(self, speed):
         await self.async_turn_on(speed)
 
-    @property
-    def oscillating(self):
-        return self._state_attrs.get('swing_action') == 'swing'
-
-    async def async_oscillate(self, oscillating: bool):
-        act = 'swing' if oscillating else 'stop'
-        _LOGGER.debug('Setting oscillating for %s: %s(%s)', self._name, act, oscillating)
-        result = await self.async_command('set_swing', [act, 0])
-        if result:
-            self.update_attrs({
-                'swing_action': act,
-            })
-
-    @property
-    def current_direction(self):
-        if int(self._state_attrs.get('swing_angle', 0)) > 90:
-            return DIRECTION_REVERSE
-        return DIRECTION_FORWARD
-
-    async def async_set_direction(self, direction: str):
-        act = 'angle'
-        num = 0
-        if f'{direction}'.isnumeric():
-            num = int(direction)
-        if num < 1:
-            num = 120 if direction == DIRECTION_REVERSE else 90
-        _LOGGER.debug('Setting direction for %s: %s(%s)', self._name, direction, num)
-        result = await self.async_command('set_swing', [act, num])
-        if result:
-            self.update_attrs({
-                'swing_action': act,
-                'swing_angle': num,
-            })
-
 
 class VenFanEntity(BathHeaterEntity):
     def __init__(self, config, mode='coolwind'):
@@ -825,41 +835,6 @@ class VenFanEntity(BathHeaterEntity):
         if speed == SPEED_HIGH:
             spd = 1
         return spd
-
-    @property
-    def oscillating(self):
-        return self._state_attrs.get('swing_action') == 'swing'
-
-    async def async_oscillate(self, oscillating: bool):
-        act = 'swing' if oscillating else 'stop'
-        _LOGGER.debug('Setting oscillating for %s: %s(%s)', self._name, act, oscillating)
-        result = await self.async_command('set_swing', [act, 0])
-        if result:
-            self._state_attrs.update({
-                'swing_action': act,
-            })
-
-    @property
-    def current_direction(self):
-        if int(self._state_attrs.get('swing_angle', 0)) > 90:
-            return DIRECTION_REVERSE
-        return DIRECTION_FORWARD
-
-    async def async_set_direction(self, direction: str):
-        act = 'angle'
-        try:
-            num = int(direction)
-        except:
-            num = 0
-        if num < 1:
-            num = 120 if direction == DIRECTION_REVERSE else 90
-        _LOGGER.debug('Setting direction for %s: %s(%s)', self._name, direction, num)
-        result = await self.async_command('set_swing', [act, num])
-        if result:
-            self._state_attrs.update({
-                'swing_action': act,
-                'swing_angle': num,
-            })
 
 
 class MiotLightEntity(MiotEntity, LightEntity):
