@@ -474,6 +474,11 @@ class YeelightEntity(MiioEntity, LightEntity):
                 self._delay_off = int(attrs.get('delayoff', 0))
 
     async def async_turn_on(self, **kwargs):
+        if not self._state:
+            result = await self._try_command('Turning the light on failed.', self._device.on)
+            if result:
+                self._state = True
+
         if self.supported_features & SUPPORT_COLOR_TEMP and ATTR_COLOR_TEMP in kwargs:
             mired = kwargs[ATTR_COLOR_TEMP]
             color_temp = self.translate_mired(mired)
@@ -508,9 +513,6 @@ class YeelightEntity(MiioEntity, LightEntity):
             )
             if result:
                 self._state_attrs['rgb'] = rgb_to_int(rgb)
-
-        if not self._state:
-            await self._try_command('Turning the light on failed.', self._device.on)
 
     async def async_set_scene(self, scene=0, params=None):
         _LOGGER.debug('Setting scene: %s params: %s', scene, params)
