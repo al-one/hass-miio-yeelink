@@ -58,6 +58,8 @@ DEFAULT_NAME = 'Xiaomi Yeelink'
 CONF_MODEL = 'model'
 SPEED_FIERCE = 'fierce'
 
+SUPPORTED_DOMAINS = ['light', 'fan']
+
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_HOST): cv.string,
@@ -123,7 +125,6 @@ async def async_setup_entry(hass: core.HomeAssistant, config_entry: config_entri
     entry_id = config_entry.entry_id
     unique_id = config_entry.unique_id
     info = config_entry.data.get('miio_info') or {}
-    platforms = ['light', 'fan']
     plats = []
     config = {}
     for k in [CONF_HOST, CONF_TOKEN, CONF_NAME, CONF_MODE, CONF_MODE]:
@@ -132,12 +133,12 @@ async def async_setup_entry(hass: core.HomeAssistant, config_entry: config_entri
     config[CONF_MODEL] = model
     mode = config.get(CONF_MODE) or ''
     for m in mode.split(','):
-        if m in platforms:
+        if m in SUPPORTED_DOMAINS:
             plats.append(m)
             config[CONF_MODE] = ''
     if not plats:
         if model.find('bhf_light') > 0 or model.find('fancl') > 0:
-            plats = platforms
+            plats = SUPPORTED_DOMAINS
         elif model.find('ceiling') > 0 or model.find('panel') > 0:
             plats = ['light']
         elif model.find('ven_fan') > 0:
@@ -145,7 +146,7 @@ async def async_setup_entry(hass: core.HomeAssistant, config_entry: config_entri
         elif model.find('yeelink.light.') >= 0:
             plats = ['light']
         else:
-            plats = platforms
+            plats = SUPPORTED_DOMAINS
     hass.data[DOMAIN]['configs'][unique_id] = config
     _LOGGER.debug('Yeelink async_setup_entry %s', {
         'entry_id': entry_id,
@@ -157,6 +158,25 @@ async def async_setup_entry(hass: core.HomeAssistant, config_entry: config_entri
     for plat in plats:
         hass.async_create_task(hass.config_entries.async_forward_entry_setup(config_entry, plat))
     return True
+
+
+async def async_update_options(hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry):
+    entry = {**config_entry.data, **config_entry.options}
+    entry.pop(CONF_TOKEN, None)
+    _LOGGER.debug('Yeelink update options: %s', entry)
+    await hass.config_entries.async_reload(config_entry.entry_id)
+
+
+async def async_unload_entry(hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry):
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(config_entry, sd)
+                for sd in SUPPORTED_DOMAINS
+            ]
+        )
+    )
+    return unload_ok
 
 
 def bind_services_to_entries(hass, services):
