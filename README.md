@@ -24,9 +24,12 @@
 
 > Download and copy `custom_components/miio_yeelink` folder to `custom_components` folder in your HomeAssistant config folder
 
-or
+```shell
+# Auto install via terminal shell
+wget -q -O - https://cdn.jsdelivr.net/gh/al-one/hass-xiaomi-miot/install.sh | DOMAIN=miio_yeelink REPO_PATH=al-one/hass-miio-yeelink bash -
+```
 
-> You can install component with [HACS](https://hacs.xyz)
+> Or you can install component with [HACS](https://hacs.xyz)
 
 
 ## Config
