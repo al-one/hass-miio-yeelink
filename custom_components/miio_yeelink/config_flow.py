@@ -64,7 +64,7 @@ class MiioYeelinkFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             await check_miio_device(self.hass, user_input, errors)
             info = user_input.get('miio_info')
             if info is not None:
-                unique_id = format_mac(info.mac_address)
+                unique_id = format_mac(info['mac'])
                 await self.async_set_unique_id(unique_id)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
