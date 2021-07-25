@@ -558,7 +558,10 @@ class YeelightEntity(MiioEntity, LightEntity):
 
     @staticmethod
     def translate_mired(num):
-        return round(1000000 / num)
+        try:
+            return round(1000000 / num)
+        except (TypeError, ValueError, ZeroDivisionError):
+            return 153
 
 
 class BathHeaterEntity(MiioEntity, FanEntity):
