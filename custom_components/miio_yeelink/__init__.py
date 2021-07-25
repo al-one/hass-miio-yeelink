@@ -487,11 +487,11 @@ class YeelightEntity(MiioEntity, LightEntity):
         if self._available:
             attrs = self._state_attrs
             if self.supported_features & SUPPORT_BRIGHTNESS and 'bright' in attrs:
-                self._brightness = ceil(255 / 100 * int(attrs.get('bright', 0)))
+                self._brightness = ceil(255 / 100 * int(attrs.get('bright') or 0))
             if self.supported_features & SUPPORT_COLOR_TEMP and 'ct' in attrs:
-                self._color_temp = int(attrs.get('ct', 0))
+                self._color_temp = int(attrs.get('ct') or 0)
             if 'delayoff' in attrs:
-                self._delay_off = int(attrs.get('delayoff', 0))
+                self._delay_off = int(attrs.get('delayoff') or 0)
 
     async def async_turn_on(self, **kwargs):
         if not self._state:
