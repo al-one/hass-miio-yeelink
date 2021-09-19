@@ -758,6 +758,7 @@ class BathHeaterEntityV3(BathHeaterEntity):
         "coolventing": (["venting", "coolwind"], 0),
         "warmwind1": (["warmwind"], 0),
         "warmwind2": (["warmwind"], 1),
+        "bh_off": ([], 0),
     }
 
     def __init__(self, config, mode='warmwind', parent=None):
