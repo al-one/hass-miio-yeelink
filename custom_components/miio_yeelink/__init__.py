@@ -784,14 +784,14 @@ class BathHeaterEntityV3(BathHeaterEntity):
             spd = self.speed_to_gears(speed or SPEED_HIGH, self._mode) if hasSpeed else 0
             result = await self.async_command('set_bh_mode', [self._mode, spd])
             if result:
-                await self.async_update()
+                self._state = True
 
     async def async_turn_off(self, **kwargs):
         _LOGGER.debug('Turning off for %s.', self._name)
         mode_off = "%s_off" % self._mode
         result = await self.async_command('set_bh_mode', [mode_off, 0])
         if result:
-            await self.async_update()
+            self._state = False
 
     @property
     def speed(self):
