@@ -751,6 +751,77 @@ class BathHeaterEntity(MiioEntity, FanEntity):
         return self._state_attrs
 
 
+class BathHeaterEntityV3(BathHeaterEntity):
+    __mode_map__ = {
+        "warmventing1": (["venting", "warmwind"], 0),
+        "warmventing2": (["venting", "warmwind"], 1),
+        "coolventing": (["venting", "coolwind"], 0),
+        "warmwind1": (["warmwind"], 0),
+        "warmwind2": (["warmwind"], 1),
+    }
+
+    def __init__(self, config, mode='warmwind', parent=None):
+        super().__init__(config, mode, parent)
+        self._supported_features = SUPPORT_SET_SPEED | SUPPORT_OSCILLATE | SUPPORT_DIRECTION
+        self._props = ['bright', 'delayoff', 'nighttime', 'bh_mode', 'bh_delayoff']
+        self._state_attrs.update({'entity_class': self.__class__.__name__})
+
+    async def async_update(self):
+        await super().async_update()
+        if self._available:
+            attrs = self._state_attrs
+            mode = attrs.get('bh_mode') or ''
+            modes, fls = self.__mode_map__.get(mode, ([self._mode], 0))
+            self._state = self._mode in modes
+            self._mode_speeds = {"warmwind": fls}
+
+    async def async_turn_on(self, speed=None, **kwargs):
+        _LOGGER.debug('Turning on for %s. speed: %s %s', self._name, speed, kwargs)
+        if speed == SPEED_OFF:
+            await self.async_turn_off()
+        else:
+            hasSpeed = self._mode in self._mode_speeds
+            spd = self.speed_to_gears(speed or SPEED_HIGH, self._mode) if hasSpeed else 0
+            result = await self.async_command('set_bh_mode', [self._mode, spd])
+            if result:
+                await self.async_update()
+
+    async def async_turn_off(self, **kwargs):
+        _LOGGER.debug('Turning off for %s.', self._name)
+        mode_off = "%s_off" % self._mode
+        result = await self.async_command('set_bh_mode', [mode_off, 0])
+        if result:
+            await self.async_update()
+
+    @property
+    def speed(self):
+        spd = int(self._mode_speeds.get(self._mode, 0))
+        if spd >= 1:
+            return SPEED_HIGH
+        return SPEED_LOW
+
+    @property
+    def mode_speeds(self):
+        return self._mode_speeds
+
+    @property
+    def speed_list(self):
+        fls = [SPEED_LOW, SPEED_HIGH]
+        return fls
+
+    @staticmethod
+    def speed_to_gears(speed=None, mode=None):
+        spd = 0
+        if speed == SPEED_LOW:
+            spd = 0
+        if speed == SPEED_HIGH:
+            spd = 1
+        return spd
+
+    async def async_set_speed(self, speed):
+        await self.async_turn_on(speed)
+
+
 class BathHeaterEntityV5(BathHeaterEntity):
     def __init__(self, config, mode='warmwind', parent=None):
         super().__init__(config, mode, parent)
