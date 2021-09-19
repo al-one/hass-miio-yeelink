@@ -771,7 +771,7 @@ class BathHeaterEntityV3(BathHeaterEntity):
         if self._available:
             attrs = self._state_attrs
             mode = attrs.get('bh_mode') or ''
-            modes, fls = self.__mode_map__.get(mode, ([self._mode], 0))
+            modes, fls = self.__mode_map__.get(mode, ([mode], 0))
             self._state = self._mode in modes
             self._mode_speeds = {"warmwind": fls}
 
