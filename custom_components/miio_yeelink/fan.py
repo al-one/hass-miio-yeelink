@@ -6,6 +6,7 @@ from homeassistant.const import *
 
 from . import (
     BathHeaterEntity,
+    BathHeaterEntityV3,
     BathHeaterEntityV5,
     VenFanEntity,
     MiotFanEntity,
@@ -40,6 +41,15 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         for m in ['warmwind', 'venting', 'drying', 'drying_cloth', 'coolwind']:
             cfg.update({CONF_NAME: f'{name} {m}'})
             entity = BathHeaterEntity(cfg, m, prt)
+            if prt is None:
+                prt = entity
+            entities.append(entity)
+    elif model in ['yeelink.bhf_light.v3']:
+        cfg = config.copy()
+        prt = None
+        for m in ['warmwind', 'venting', 'drying', 'coolwind']:
+            cfg.update({CONF_NAME: f'{name} {m}'})
+            entity = BathHeaterEntityV3(cfg, m, prt)
             if prt is None:
                 prt = entity
             entities.append(entity)
