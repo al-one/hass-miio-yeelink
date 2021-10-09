@@ -1,7 +1,7 @@
 """Support for Yeelink."""
 import logging
 import asyncio
-from math import ceil
+from math import ceil, floor
 from datetime import timedelta
 from functools import partial
 import voluptuous as vol
@@ -559,7 +559,7 @@ class YeelightEntity(MiioEntity, LightEntity):
     @staticmethod
     def translate_mired(num):
         try:
-            return round(1000000 / num)
+            return floor(1000000 / num)
         except (TypeError, ValueError, ZeroDivisionError):
             return 153
 
@@ -1048,7 +1048,7 @@ class MiotLightEntity(MiotEntity, LightEntity):
 
     @staticmethod
     def translate_mired(num):
-        return round(1000000 / num)
+        return floor(1000000 / num)
 
 
 class MiotFanEntity(MiotEntity, FanEntity):
