@@ -219,11 +219,17 @@ def bind_services_to_entries(hass, services):
 class MiotDevice(MiotDeviceBase):
     def __init__(self, *args, mapping=None, **kwargs):
         try:
-            super().__init__(*args, **kwargs)
-            if mapping is not None:
-                self.mapping = mapping
-        except TypeError:
-            super().__init__(mapping, *args, **kwargs)
+            super().__init__(*args, **kwargs, mapping=mapping)
+        except (TypeError, DeviceException) as exc:
+            err = f'{exc}'
+            if 'mapping' in err:
+                if 'unexpected keyword argument' in err:
+                    # for python-miio <= v0.5.5.1
+                    device = super().__init__(*args, **kwargs, mapping=mapping)
+                    device.mapping = mapping
+                elif 'required positional argument' in err:
+                    # for python-miio <= v0.5.4
+                    device = super().__init__(mapping, *args, **kwargs)  # noqa
 
 
 class MiioEntity(ToggleEntity):
@@ -1076,8 +1082,7 @@ class MiotFanEntity(MiotEntity, FanEntity):
                 'dalayoff': {'siid': 3, 'piid': 11},
             })
 
-        self._device = MiotDevice(ip=host, token=token)
-        self._device.mapping = self.mapping
+        self._device = MiotDevice(ip=host, token=token, mapping=self.mapping)
         super().__init__(name, self._device)
         self._unique_id = f'{self._miio_info.model}-{self._miio_info.mac_address}-fan'
         self._supported_features = SUPPORT_SET_SPEED
