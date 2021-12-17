@@ -282,7 +282,7 @@ class MiioEntity(ToggleEntity):
         return {**self._state_attrs, **ext}
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         return self._state_attrs
 
     @property
