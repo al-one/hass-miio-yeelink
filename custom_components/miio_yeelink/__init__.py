@@ -259,6 +259,7 @@ class MiioEntity(ToggleEntity):
         self._supported_features = 0
         self._props = ['power']
         self._success_result = ['ok']
+        self._deprecated_device_state_attributes_reported = True
 
     @property
     def unique_id(self):
