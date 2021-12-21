@@ -74,3 +74,4 @@ fan.your_entity_id:
   1. Down apk from [СКАЧАТЬ ВЕРСИЮ 6.x.x](https://www.kapiba.ru/2017/11/mi-home.html)
   2. Create folder `/your_interlal_storage/vevs/logs/`
   3. Find token from `vevs/logs/misc/devices.txt`
+- Or alternatively get the token using this tool: https://github.com/Maxmudjon/Get_MiHome_devices_token
