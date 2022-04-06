@@ -31,10 +31,6 @@ from homeassistant.components.fan import (
     SUPPORT_SET_SPEED,
     SUPPORT_DIRECTION,
     SUPPORT_OSCILLATE,
-    SPEED_OFF,
-    SPEED_LOW,
-    SPEED_MEDIUM,
-    SPEED_HIGH,
     DIRECTION_FORWARD,
     DIRECTION_REVERSE,
 )
@@ -56,6 +52,10 @@ DOMAIN = 'miio_yeelink'
 SCAN_INTERVAL = timedelta(seconds=60)
 DEFAULT_NAME = 'Xiaomi Yeelink'
 CONF_MODEL = 'model'
+SPEED_OFF = 'off'
+SPEED_LOW = 'low'
+SPEED_MEDIUM = 'medium'
+SPEED_HIGH = 'high'
 SPEED_FIERCE = 'fierce'
 
 SUPPORTED_DOMAINS = ['light', 'fan']
