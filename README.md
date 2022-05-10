@@ -19,6 +19,7 @@
 - yeelink.light.fancl2
 - yeelink.light.fancl3
 - yeelink.light.color5 ([#26](https://github.com/al-one/hass-miio-yeelink/issues/26))
+- yeelink.light.bslamp2 ([#52](https://github.com/al-one/hass-miio-yeelink/issues/52))
 
 
 ## Installing
