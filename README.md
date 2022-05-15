@@ -15,6 +15,7 @@
 - yeelink.bhf_light.v1
 - yeelink.bhf_light.v5
 - yeelink.light.lamp3
+- yeelink.light.lamp4
 - yeelink.light.lamp5
 - yeelink.light.fancl2
 - yeelink.light.fancl3
