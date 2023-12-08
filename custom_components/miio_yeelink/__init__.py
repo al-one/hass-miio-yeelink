@@ -207,7 +207,7 @@ def bind_services_to_entries(hass, services):
                 _LOGGER.info('%s have no method: %s', dvc.entity_id, fun)
                 continue
             await getattr(dvc, fun)(**params)
-            update_tasks.append(dvc.async_update_ha_state(True))
+            update_tasks.append(asyncio.create_task(dvc.async_update_ha_state(True)))
         if update_tasks:
             await asyncio.wait(update_tasks)
 
