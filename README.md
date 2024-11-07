@@ -14,13 +14,21 @@
 ## Tested By Community
 - yeelink.bhf_light.v1
 - yeelink.bhf_light.v5
+- yeelink.light.lamp1 ([#64](https://github.com/al-one/hass-miio-yeelink/issues/64))
 - yeelink.light.lamp3
 - yeelink.light.lamp4
 - yeelink.light.lamp5
+- yeelink.light.lamp9 ([#55](https://github.com/al-one/hass-miio-yeelink/issues/55))
 - yeelink.light.fancl2
 - yeelink.light.fancl3
 - yeelink.light.color5 ([#26](https://github.com/al-one/hass-miio-yeelink/issues/26))
 - yeelink.light.bslamp2 ([#52](https://github.com/al-one/hass-miio-yeelink/issues/52))
+- yeelink.light.mono6 ([#88](https://github.com/al-one/hass-miio-yeelink/issues/88))
+- yeelink.light.color3 ([#92](https://github.com/al-one/hass-miio-yeelink/issues/92))
+- yeelink.light.lamp27 ([#97](https://github.com/al-one/hass-miio-yeelink/issues/79))
+- yeelink.light.strip1 ([#67](https://github.com/al-one/hass-miio-yeelink/issues/67))
+- yeelink.light.ceiling1 ([#67](https://github.com/al-one/hass-miio-yeelink/issues/67))
+- chuangmi.plug.m1 ([#67](https://github.com/al-one/hass-miio-yeelink/issues/67))
 
 
 ## Installing
