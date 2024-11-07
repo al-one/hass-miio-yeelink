@@ -1,0 +1,40 @@
+{
+    "config": {
+        "flow_title": "Miio para Yeelink: {name}",
+        "step": {
+            "user": {
+                "title": "Miio para Yeelink",
+                "description": "Configurar información del dispositivo.",
+                "data": {
+                    "host": "IP del dispositivo",
+                    "token": "Token",
+                    "name": "Nombre del dispositivo",
+                    "model": "Modelo",
+                    "mode": "Modo (luz, ventilador...) vacío para automático"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "No se pudo conectar con el dispositivo"
+        },
+        "abort": {
+            "already_configured": "El dispositivo ya está configurado",
+            "not_xiaomi_miio": "No es un dispositivo Xiaomi Miio."
+        }
+    },
+    "options": {
+        "step": {
+            "user": {
+                "title": "Miio para Yeelink",
+                "description": "Configurar información del dispositivo.",
+                "data": {
+                    "host": "IP del dispositivo",
+                    "token": "Token"
+                }
+            }
+        },
+        "error": {
+            "cannot_connect": "No se pudo conectar con el dispositivo"
+        }
+    }
+}
