@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from homeassistant import core, config_entries
 from homeassistant.const import *
-from homeassistant.config import DATA_CUSTOMIZE
+from homeassistant.helpers.entity import DATA_CUSTOMIZE
 from homeassistant.exceptions import PlatformNotReady
 from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.helpers.entity_component import EntityComponent
