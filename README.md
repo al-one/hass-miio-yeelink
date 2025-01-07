@@ -1,5 +1,7 @@
 # Xiaomi Miio For Yeelink devices
 
+## ⚠️ Migrate to [Xiaomi Miot](https://github.com/al-one/hass-xiaomi-miot), [submit an issue](https://github.com/al-one/hass-xiaomi-miot/issues/new?template=device-issue.yml) if it doesn't support your device.
+
 ## Tested Devices
 
 - MJXDD02YL | yeelink.light.ceiling21
